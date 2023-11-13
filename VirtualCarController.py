@@ -20,6 +20,22 @@ class VirtualCarController:
         theta = math.atan(delta_y/ delta_x)
         return math.degrees(theta)
 
+    def control_steering(self, angle):
+        a_min, a_max = 1, 30
+        print(angle)
+        if angle > a_min:
+            if angle > a_max:
+                angle = a_max
+            self.gamepad.left_joystick_float(self.normalize_angle(angle, a_min, a_max), 0)
+            print("Right")
+        elif angle < -a_min:
+            if angle < -a_max:
+                angle = -a_max
+            self.gamepad.left_joystick_float(-self.normalize_angle(angle, a_min, a_max), 0)
+            print("Left")
+        else:
+            self.gamepad.left_joystick_float(0, 0)
+            print("Forward")
    
 
     def run(self):
@@ -43,6 +59,7 @@ class VirtualCarController:
                     try:
                         angle = self.calculate_angle(double_hands[0][0], double_hands[1][0])
                         cv2.putText(frame, f"Angle: {int(angle)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+                        self.control_steering(angle)
 
                         self.gamepad.update()
                         cv2.line(frame, double_hands[0][0], double_hands[1][0], (255, 0, 0), 3)

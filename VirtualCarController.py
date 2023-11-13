@@ -42,13 +42,13 @@ class VirtualCarController:
 
                     try:
                         angle = self.calculate_angle(double_hands[0][0], double_hands[1][0])
-                        cv2.putText(frame, f"Angle: {angle}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+                        cv2.putText(frame, f"Angle: {int(angle)}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
                         self.gamepad.update()
                         cv2.line(frame, double_hands[0][0], double_hands[1][0], (255, 0, 0), 3)
                     except Exception as e:
                           print(f"Error processing landmarks: {e}")
-                          
+
                 cv2.imshow("Virtual driving control", frame)
             except:
                 pass

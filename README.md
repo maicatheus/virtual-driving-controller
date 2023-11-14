@@ -18,7 +18,7 @@ Instalação:
 2. Instale os pacotes necessários usando o pip:
 
 ```bash
-pip install opencv-python mediapipe vgamepad
+pip install -r requirements.txt
 ```
 Instruções de Controle:
 -----------------------

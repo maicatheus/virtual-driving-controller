@@ -22,8 +22,8 @@ pip install opencv-python mediapipe vgamepad
 ```
 Instruções de Controle:
 -----------------------
-- Acelerar: Mantenha a distância entre o polegar e a base do polegar acima de um certo limiar em ambas as mãos.
-- Frear: Mantenha um polear esticado e outro abaixado, idependente se é o esquerdo ou direito.
+- Acelerar: Levante o pelgar da direita gradualmente para acelerar.
+- Frear: Levante o polegar da esquerda gradualmente para freiar.
 - Direção: Mova as mãos para a esquerda ou direita para controlar a direção. O ângulo entre as mãos é utilizado para determinar a direção do volante.
 
 Características:

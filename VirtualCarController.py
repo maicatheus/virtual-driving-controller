@@ -58,26 +58,13 @@ class VirtualCarController:
 
     def control_steering(self, angle):
         a_min, a_max = 0, 50
-        steerling_error = 8192
-        # multiple=1
-        # if angle > a_min and angle < 10:
-        #     multiple = 1.7
-        # if angle < a_min and angle > -10:
-        #     multiple = 1.7
-            
-        if angle >= a_min:
-            if angle > a_max:
-                angle = a_max
-            self.gamepad.left_joystick(int(self.normalize_value(angle, a_min, a_max)*32768 + steerling_error), 0)
-            # print("Right")
-        elif angle < -a_min:
-            if angle < -a_max:
-                angle = -a_max
-            self.gamepad.left_joystick(int(-self.normalize_value(angle, a_min, a_max)*32768 - steerling_error), 0)
-            # print("Left")
-        else:
-            self.gamepad.left_joystick(0, 0)
-            # print("Forward")
+        steerling_error = 0.25
+        multiple = 1
+        if angle <= 0:
+            multiple = -1
+
+        self.gamepad.left_joystick_float(multiple*(self.normalize_value(angle, a_min, a_max)+steerling_error), 0)
+           
     
     def draw_rectangle_of_speed(self, frame,text,mode,color, x_position):
         bar_x = x_position  

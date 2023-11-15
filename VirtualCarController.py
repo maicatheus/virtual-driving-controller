@@ -41,8 +41,8 @@ class VirtualCarController:
         return sum(values)/len(values)
     
     def control_speed(self,thumb1,thumb2,base_thumb1, base_thumb2):
-        max_value_to_speed_control = 80
-        min_value_to_speed_control = 30
+        max_value_to_speed_control = 110
+        min_value_to_speed_control = 40
 
         thumb_distance1 = self.calculate_distance(thumb1,base_thumb1)
         thumb_distance2 = self.calculate_distance(thumb2,base_thumb2)
@@ -69,8 +69,34 @@ class VirtualCarController:
             multiple = -1
 
         self.gamepad.left_joystick_float(multiple*(self.normalize_value(angle, a_min, a_max)+steerling_error), 0)
-           
     
+    def fpv_control(self,nose,eyes, box):
+        eye1 = eyes[0]
+        eye2 = eyes[1]
+        
+        half_box_width = abs(box[0][0] - box[1][0])/2
+        
+        trashhold = 0#int(half_box_width*0.06)
+        
+        middle_box = half_box_width + box[0][0]
+
+
+        multiple = 1
+        distance_nose_middle_box = abs(nose[0] - middle_box)
+        moviment_distance = self.normalize_value(distance_nose_middle_box,trashhold,half_box_width)
+
+        if(nose[0]<middle_box - trashhold):
+            multiple = -1
+            # print("Left")
+
+        self.gamepad.right_joystick_float(multiple*moviment_distance, 0)
+
+
+
+
+        # print(moviment_distance*multiple)
+
+
     def draw_rectangle_of_speed(self, frame,text,mode,color, x_position):
         bar_x = x_position  
         bar_y = 100 
@@ -102,15 +128,18 @@ class VirtualCarController:
                     results_face = face_detection.process(frame_rgb)
 
                     face = []
+                    box = 0
                     if results_face.detections:
                         for index, detections in enumerate(results_face.detections):
                             for i, lm in enumerate(detections.location_data.relative_keypoints):
+                                
+                                box_aux =  detections.location_data.relative_bounding_box
                                 h, w, _ = frame.shape
+                                box=( (int(box_aux.xmin*w) ,int(box_aux.ymin*h)), (int(box_aux.xmin*w + box_aux.width*w), int(box_aux.ymin*h + box_aux.height*h)) )
                                 cx, cy = int(lm.x * w), int(lm.y * h)
                                 face.append((cx, cy))
-                            
                             self.mpDraw.draw_detection(frame_rgb, detections)
-
+                    
                     nose = face[2]
                     eyes = (face[0],face[1])
 
@@ -134,7 +163,7 @@ class VirtualCarController:
                             cv2.putText(frame, f"Angle: {int(angle)}", (100, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
                             self.control_steering(angle)
                             self.control_speed(thumb1,thumb2,base_thumb1,base_thumb2)
-                    
+                            self.fpv_control(nose, eyes, box)
                             self.draw_rectangle_of_speed(frame,"Speed", self.speed,(0,255,0),500)
                             self.draw_rectangle_of_speed(frame,"Brake", self.brake,(0,0,255),100)
 

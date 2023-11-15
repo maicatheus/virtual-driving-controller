@@ -26,6 +26,10 @@ class VirtualCarController:
     def calculate_angle(self, p1, p2):
         delta_x = p2[0] - p1[0]
         delta_y = p2[1] - p1[1]
+
+        if(delta_x==0):
+            return 90
+        
         theta = math.atan(delta_y/ delta_x)
         return math.degrees(theta)
 

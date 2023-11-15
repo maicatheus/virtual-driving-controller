@@ -7,6 +7,7 @@ class VirtualCarController:
     def __init__(self):
         self.gamepad = vg.VX360Gamepad()
         self.mpDraw = mp.solutions.drawing_utils
+        self.mp_face_detection = mp.solutions.face_detection
         self.mpHands = mp.solutions.hands
         self.hands = self.mpHands.Hands(max_num_hands=2)
         self.camera = cv2.VideoCapture(0)
@@ -86,51 +87,71 @@ class VirtualCarController:
 
 
     def run(self):
-        while True:
-            try:
-                ret, frame = self.camera.read()
-                frame =cv2.flip(frame, 1)
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                results = self.hands.process(frame_rgb) 
+        with self.mp_face_detection.FaceDetection(
+            model_selection=0,
+            min_detection_confidence=0.5
+        ) as face_detection:
+            while True:
+                try:
+                    ret, frame = self.camera.read()
+                    frame = cv2.flip(frame, 1)
+                    
+                    frame_rgb = frame #cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    results_hand = self.hands.process(frame_rgb) 
+                    
+                    results_face = face_detection.process(frame_rgb)
 
-                double_hands = ([], [])
-                if results.multi_hand_landmarks:
-                    for index, hands_lms in enumerate(results.multi_hand_landmarks):
-                        for id, lm in enumerate(hands_lms.landmark):
-                            h, w, _ = frame.shape
-                            cx, cy = int(lm.x * w), int(lm.y * h)
-                            double_hands[index].append((cx, cy))
+                    face = []
+                    if results_face.detections:
+                        for index, detections in enumerate(results_face.detections):
+                            for i, lm in enumerate(detections.location_data.relative_keypoints):
+                                h, w, _ = frame.shape
+                                cx, cy = int(lm.x * w), int(lm.y * h)
+                                face.append((cx, cy))
+                            
+                            self.mpDraw.draw_detection(frame_rgb, detections)
 
-                        self.mpDraw.draw_landmarks(frame, hands_lms, self.mpHands.HAND_CONNECTIONS)
+                    nose = face[2]
+                    eyes = (face[0],face[1])
 
-                    try:
-                        thumb1 = double_hands[0][4]
-                        base_thumb1 = double_hands[0][6]
-                        thumb2 = double_hands[1][4]
-                        base_thumb2 = double_hands[1][6]
+                    double_hands = ([], [])
+                    if results_hand.multi_hand_landmarks:
+                        for index, hands_lms in enumerate(results_hand.multi_hand_landmarks):
+                            for id, lm in enumerate(hands_lms.landmark):
+                                h, w, _ = frame.shape
+                                cx, cy = int(lm.x * w), int(lm.y * h)
+                                double_hands[index].append((cx, cy))
 
-                        angle = self.calculate_angle(double_hands[0][0], double_hands[1][0])
-                        cv2.putText(frame, f"Angle: {int(angle)}", (100, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-                        self.control_steering(angle)
-                        self.control_speed(thumb1,thumb2,base_thumb1,base_thumb2)
+                            self.mpDraw.draw_landmarks(frame, hands_lms, self.mpHands.HAND_CONNECTIONS)
 
-                        self.draw_rectangle_of_speed(frame,"Speed", self.speed,(0,255,0),500)
-                        self.draw_rectangle_of_speed(frame,"Brake", self.brake,(0,0,255),100)
+                        try:
+                            thumb1 = double_hands[0][4]
+                            base_thumb1 = double_hands[0][6]
+                            thumb2 = double_hands[1][4]
+                            base_thumb2 = double_hands[1][6]
 
-                        self.gamepad.update()
-                        cv2.line(frame, double_hands[0][0], double_hands[1][0], (255, 0, 0), 3)
-                        cv2.line(frame, thumb1, base_thumb1, (0, 255, 0), 2)
-                        cv2.line(frame, thumb2, base_thumb2, (0, 0, 255), 2)
-                    except Exception as e:
-                        self.speed = 0
-                        self.brake = 0
-                        self.gamepad.left_joystick(0, 0)
-                        self.gamepad.update()
+                            angle = self.calculate_angle(double_hands[0][0], double_hands[1][0])
+                            cv2.putText(frame, f"Angle: {int(angle)}", (100, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+                            self.control_steering(angle)
+                            self.control_speed(thumb1,thumb2,base_thumb1,base_thumb2)
+                    
+                            self.draw_rectangle_of_speed(frame,"Speed", self.speed,(0,255,0),500)
+                            self.draw_rectangle_of_speed(frame,"Brake", self.brake,(0,0,255),100)
 
-                        print(f"Error processing landmarks: {e}")
+                            self.gamepad.update()
+                            cv2.line(frame, double_hands[0][0], double_hands[1][0], (255, 0, 0), 3)
+                            cv2.line(frame, thumb1, base_thumb1, (0, 255, 0), 2)
+                            cv2.line(frame, thumb2, base_thumb2, (0, 0, 255), 2)
+                        except Exception as e:
+                            self.speed = 0
+                            self.brake = 0
+                            self.gamepad.left_joystick(0, 0)
+                            self.gamepad.update()
 
-                cv2.imshow("Virtual driving control", frame)
-            except:
-                pass
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
+                            print(f"Error processing landmarks: {e}")
+
+                    cv2.imshow("Virtual driving control", frame_rgb)
+                except:
+                    pass
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break

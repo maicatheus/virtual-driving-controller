@@ -62,17 +62,17 @@ class VirtualCarController:
 
 
     def control_steering(self, angle):
-        a_min, a_max = 0, 50
+        a_min, a_max = 0, 60
         steerling_error = 0.25
         multiple = 1
         if angle <= 0:
             multiple = -1
 
-        self.gamepad.left_joystick_float(multiple*(self.normalize_value(angle, a_min, a_max)+steerling_error), 0)
+        angle_normalized = self.normalize_value(angle, a_min, a_max)+steerling_error if self.normalize_value(angle, a_min, a_max)+steerling_error<=1 else 1.0
+         
+        self.gamepad.left_joystick_float(multiple*(angle_normalized), 0)
     
-    def fpv_control(self,nose,eyes, box):
-        eye1 = eyes[0]
-        eye2 = eyes[1]
+    def fpv_control(self,nose, box):
         
         half_box_width = abs(box[0][0] - box[1][0])/2
         
@@ -141,7 +141,6 @@ class VirtualCarController:
                             self.mpDraw.draw_detection(frame_rgb, detections)
                     
                     nose = face[2]
-                    eyes = (face[0],face[1])
 
                     double_hands = ([], [])
                     if results_hand.multi_hand_landmarks:
@@ -163,7 +162,7 @@ class VirtualCarController:
                             cv2.putText(frame, f"Angle: {int(angle)}", (100, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
                             self.control_steering(angle)
                             self.control_speed(thumb1,thumb2,base_thumb1,base_thumb2)
-                            self.fpv_control(nose, eyes, box)
+                            self.fpv_control(nose, box)
                             self.draw_rectangle_of_speed(frame,"Speed", self.speed,(0,255,0),500)
                             self.draw_rectangle_of_speed(frame,"Brake", self.brake,(0,0,255),100)
 
